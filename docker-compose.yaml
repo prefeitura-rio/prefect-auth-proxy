@@ -2,7 +2,6 @@ version: "3.8"
 services:
   db:
     image: postgres:13
-    read_only: true
     environment:
       POSTGRES_PASSWORD: postgres
     ports:
