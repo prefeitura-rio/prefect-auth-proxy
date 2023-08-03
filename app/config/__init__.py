@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from os import getenv
+from typing import List
 
 from loguru import logger
 
@@ -31,6 +32,36 @@ def getenv_or_action(env_name: str, *, action: str = "raise", default: str = Non
         elif action == "warn":
             logger.warning(f"Warning: Environment variable {env_name} is not set.")
     return value
+
+
+def getenv_list_or_action(
+    env_name: str, *, action: str = "raise", default: str = None
+) -> List[str]:
+    """Get an environment variable or raise an exception.
+
+    Args:
+        env_name (str): The name of the environment variable.
+        action (str, optional): The action to take if the environment variable is not set.
+            Defaults to "raise".
+        default (str, optional): The default value to return if the environment variable is not set.
+            Defaults to None.
+
+    Raises:
+        ValueError: If the action is not one of "raise", "warn", or "ignore".
+
+    Returns:
+        str: The value of the environment variable, or the default value if the environment variable
+            is not set.
+    """
+    value = getenv_or_action(env_name, action=action, default=default)
+    if value is not None:
+        if isinstance(value, str):
+            return value.split(",")
+        elif isinstance(value, list):
+            return value
+        else:
+            raise TypeError("value must be a string or a list")
+    return []
 
 
 environment = getenv_or_action("ENVIRONMENT", action="warn", default="dev")

@@ -18,3 +18,4 @@ async def validate_token(token: Annotated[str, Depends(HTTPBearer())]):
         raise HTTPException(status_code=401, detail="Inactive user")
     if user.token_expiry and user.token_expiry < pendulum.now(tz=config.TIMEZONE):
         raise HTTPException(status_code=401, detail="Expired token")
+    return user

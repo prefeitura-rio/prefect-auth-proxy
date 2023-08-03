@@ -14,7 +14,11 @@ async def run(username: str, password: str):
     await Tortoise.generate_schemas()
 
     await User.create(
-        username=username, password=password, is_active=True, token=uuid4(), scopes="*"
+        username=username,
+        password=await password_hash(password),
+        is_active=True,
+        token=uuid4(),
+        scopes="*",
     )
     await Tortoise.close_connections()
 
@@ -24,4 +28,4 @@ if __name__ == "__main__":
     parser.add_argument("--username", type=str, required=True)
     parser.add_argument("--password", type=str, required=True)
     args = parser.parse_args()
-    run_async(run(args.username, password_hash(args.password)))
+    run_async(run(args.username, args.password))

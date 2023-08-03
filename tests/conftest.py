@@ -50,7 +50,7 @@ async def initialize_tests():
 @pytest.fixture(scope="module")
 async def create_user():
     # Create user
-    password_hashed = password_hash(PASSWORD)
+    password_hashed = await password_hash(PASSWORD)
     user = await User.create(
         username=USERNAME,
         password=password_hashed,

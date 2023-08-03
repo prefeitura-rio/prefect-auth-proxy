@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from loguru import logger
 from pydantic import BaseModel
 
+from app.dependencies import validate_token
 from app.models import User
 from app.utils import password_verify
 
@@ -26,6 +27,11 @@ async def login(data: LoginRequest) -> LoginResponse:
     logger.debug(f"User: {user}")
     if not user:
         return LoginResponse(token="", success=False)
-    if not password_verify(data.password, user.password):
+    if not await password_verify(data.password, user.password):
         return LoginResponse(token="", success=False)
+    return LoginResponse(token=str(user.token), success=True)
+
+
+@router.get("/validate")
+async def validate(user: User = Depends(validate_token)) -> LoginResponse:
     return LoginResponse(token=str(user.token), success=True)
