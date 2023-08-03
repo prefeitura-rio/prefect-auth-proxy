@@ -20,7 +20,9 @@ repos:
             "--config",
             "auto",
             "--exclude-rule",
-            "yaml.docker-compose.security.writable-filesystem-service.writable-filesystem-service"
+            "yaml.docker-compose.security.writable-filesystem-service.writable-filesystem-service",
+            "--exclude-rule",
+            "yaml.github-actions.security.third-party-action-not-pinned-to-commit-sha.third-party-action-not-pinned-to-commit-sha",
         ]
 
 -   repo: https://github.com/psf/black
