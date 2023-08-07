@@ -273,7 +273,7 @@ def get_entities_and_ids_from_variable_node(
     for variable_name in variables[variable_node.name.value]:
         entity = variable_name.split("_id")[0]
         entities.append(entity)
-        ids.append(variables[variable_name])
+        ids.append(variables[variable_node.name.value][variable_name])
     return entities, ids
 
 
