@@ -173,9 +173,19 @@ async def get_entities_and_ids_from_input(
     ids = []
     for argument in selection.arguments:
         if argument.name.value == "input":
-            _entities, _ids = await get_entities_and_ids_from_object_value_node(
-                argument.value, variables
-            )
+            if isinstance(argument.value, ObjectValueNode):
+                _entities, _ids = await get_entities_and_ids_from_object_value_node(
+                    argument.value, variables
+                )
+            elif isinstance(argument.value, VariableNode):
+                _entities, _ids = await get_entities_and_ids_from_variable_node(
+                    argument.value, variables
+                )
+            else:
+                raise ValueError(
+                    "Argument value should be either an ObjectValueNode or a VariableNode, not "
+                    f"{type(argument.value)}."
+                )
             entities.extend(_entities)
             ids.extend(_ids)
             break
@@ -243,6 +253,26 @@ async def get_entities_and_ids_from_object_value_node(
             elif isinstance(field.value, VariableNode):
                 entities.append(entity)
                 ids.append(variables[field.value.name.value])
+    return entities, ids
+
+
+def get_entities_and_ids_from_variable_node(
+    variable_node: VariableNode, variables: dict
+) -> Tuple[List[str], List[str]]:
+    """Get the entities and ids from the variable node.
+
+    Args:
+        variable_node (VariableNode): The variable node.
+
+    Returns:
+        Tuple[List[str], List[str]]: The entities and ids.
+    """
+    entities = []
+    ids = []
+    for variable_name in variables[variable_node.name.value]:
+        entity = variable_name.split("_id")[0]
+        entities.append(entity)
+        ids.append(variables[variable_name])
     return entities, ids
 
 
