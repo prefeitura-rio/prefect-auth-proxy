@@ -354,6 +354,42 @@ async def get_entity_id(
     raise ValueError(f"Couldn't find {name_entity_id} in selection arguments or variables.")
 
 
+async def get_entity_ids_from_input_states(entity: str, selection: FieldNode, variables: dict):
+    """Get the entity ids from the input states.
+
+    Args:
+        entity (str): The entity name.
+        selection (FieldNode): The selection.
+        variables (dict): The variables.
+
+    Returns:
+        List[str]: The entity ids.
+    """
+    entity_ids = []
+    for arg in selection.arguments:
+        if arg.name.value == "input":
+            if isinstance(arg.value, ObjectValueNode):
+                for field in arg.value.fields:
+                    if field.name.value == "states":
+                        if isinstance(field.value, ListValueNode):
+                            for object_value_node in field.value.values:
+                                entities, ids = await get_entities_and_ids_from_object_value_node(
+                                    object_value_node, variables
+                                )
+                                if entity in entities:
+                                    entity_ids.append(ids[entities.index(entity)])
+                        elif isinstance(field.value, VariableNode):
+                            for state in variables[field.value.name.value]:
+                                if f"{entity}_id" in state:
+                                    entity_ids.append(state[f"{entity}_id"])
+            elif isinstance(arg.value, VariableNode):
+                if "states" in variables[arg.value.name.value]:
+                    for state in variables[arg.value.name.value]["states"]:
+                        if f"{entity}_id" in state:
+                            entity_ids.append(state[f"{entity}_id"])
+    return entity_ids
+
+
 async def get_flow_run_ids_from_write(selection: FieldNode, variables: dict) -> List[str]:
     """Get the flow run ids from the write selection.
 
@@ -468,9 +504,9 @@ async def modify_operations(operations: List[dict], tenant_id: str) -> Tuple[boo
     perform_operations = True
     modified_operations = []
     for operation in operations:
-        logger.info(
-            f"Operation:\n- Query:\n{operation['query']}\n- Variables:\n{operation['variables']}"
-        )
+        query = operation["query"] if "query" in operation else None
+        variables = operation["variables"] if "variables" in operation else None
+        logger.info(f"Operation:\n- Query:\n{query}\n- Variables:\n{variables}")
         if isinstance(operation["variables"], str):
             operation["variables"] = json.loads(operation["variables"])
         ast = parse(operation["query"])
@@ -576,19 +612,27 @@ async def modify_operations(operations: List[dict], tenant_id: str) -> Tuple[boo
                     # If it's a delete operation, we must get the entity id
                     elif action in ["delete", "set", "update"]:
                         entity = await map_entity_name(entity)
-                        entity_id = await get_entity_id(
-                            entity, selection, operation["variables"], loosen=True
-                        )
-                        belongs = await check_if_entity_belongs_to_tenant(
-                            entity, entity_id, tenant_id
-                        )
-                        if not belongs:
-                            logger.error(
-                                f"{entity.capitalize()} {entity_id} doesn't belong to tenant "
-                                f"{tenant_id}"
+                        entity_ids = []
+                        if action.endswith("states"):
+                            entity_ids = await get_entity_ids_from_input_states(
+                                entity, selection, operation["variables"], loosen=True
                             )
-                            perform_operations = False
-                            break
+                        else:
+                            entity_id = await get_entity_id(
+                                entity, selection, operation["variables"], loosen=True
+                            )
+                            entity_ids.append(entity_id)
+                        for entity_id in entity_ids:
+                            belongs = await check_if_entity_belongs_to_tenant(
+                                entity, entity_id, tenant_id
+                            )
+                            if not belongs:
+                                logger.error(
+                                    f"{entity.capitalize()} {entity_id} doesn't belong to tenant "
+                                    f"{tenant_id}"
+                                )
+                                perform_operations = False
+                                break
                     elif action == "insert":
                         # The argument is either `objects` or `object`. We need to collect all
                         # IDs and related entities within the objects and check if they belong
