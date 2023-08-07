@@ -6,10 +6,10 @@ from tortoise.contrib.pydantic import pydantic_model_creator
 
 from app.dependencies import validate_token
 from app.models import Tenant
-from app.utils import Status
+from app.utils import Status, graphql_request
 
 TenantPydantic = pydantic_model_creator(Tenant)
-TenantInPydantic = pydantic_model_creator(Tenant, name="TenantIn", exclude_readonly=True)
+TenantInPydantic = pydantic_model_creator(Tenant, name="TenantIn", include=("slug",))
 TenantPatchPydantic = pydantic_model_creator(
     Tenant,
     name="TenantPatch",
@@ -30,10 +30,25 @@ async def get_tenants() -> list[TenantPydantic]:
     return await TenantPydantic.from_queryset(Tenant.all())
 
 
-@router.post("/create/", status_code=201)
-async def create_tenant(tenant: TenantPydantic) -> TenantPydantic:
+@router.post("/", status_code=201)
+async def create_tenant(tenant: TenantInPydantic) -> TenantPydantic:
+    try:
+        query = """
+            mutation CreateTenant($input: create_tenant_input!) {
+                create_tenant(input: $input) {
+                    id
+                }
+            }
+        """
+        variables = {"input": {"name": tenant.slug, "slug": tenant.slug}}
+        operations = {"query": query, "variables": variables}
+        response = await graphql_request(operations)
+        response.raise_for_status()
+        tenant_id = response.json()["data"]["create_tenant"]["id"]
+    except Exception as exc:
+        raise exc
     new_tenant = await Tenant.create(
-        id=tenant.id,
+        id=tenant_id,
         slug=tenant.slug,
     )
     return TenantPydantic.from_orm(new_tenant)
