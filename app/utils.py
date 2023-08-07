@@ -436,6 +436,9 @@ async def modify_operations(operations: List[dict], tenant_id: str) -> Tuple[boo
     perform_operations = True
     modified_operations = []
     for operation in operations:
+        logger.info(
+            f"Operation:\n- Query:\n{operation['query']}\n- Variables:\n{operation['variables']}"
+        )
         ast = parse(operation["query"])
         for definition in ast.definitions:
             if isinstance(definition, FragmentDefinitionNode):
