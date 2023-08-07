@@ -507,7 +507,7 @@ async def modify_operations(operations: List[dict], tenant_id: str) -> Tuple[boo
         query = operation["query"] if "query" in operation else None
         variables = operation["variables"] if "variables" in operation else None
         logger.info(f"Operation:\n- Query:\n{query}\n- Variables:\n{variables}")
-        if isinstance(operation["variables"], str):
+        if "variables" in operation and isinstance(operation["variables"], str):
             operation["variables"] = json.loads(operation["variables"])
         ast = parse(operation["query"])
         for definition in ast.definitions:
