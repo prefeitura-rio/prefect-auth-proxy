@@ -257,7 +257,7 @@ async def get_entities_and_ids_from_object_value_node(
     return entities, ids
 
 
-def get_entities_and_ids_from_variable_node(
+async def get_entities_and_ids_from_variable_node(
     variable_node: VariableNode, variables: dict
 ) -> Tuple[List[str], List[str]]:
     """Get the entities and ids from the variable node.
