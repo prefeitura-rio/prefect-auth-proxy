@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import base64
 import hashlib
+import json
 import secrets
 from typing import List, Tuple
 
@@ -469,6 +470,8 @@ async def modify_operations(operations: List[dict], tenant_id: str) -> Tuple[boo
         logger.info(
             f"Operation:\n- Query:\n{operation['query']}\n- Variables:\n{operation['variables']}"
         )
+        if isinstance(operation["variables"], str):
+            operation["variables"] = json.loads(operation["variables"])
         ast = parse(operation["query"])
         for definition in ast.definitions:
             if isinstance(definition, FragmentDefinitionNode):
