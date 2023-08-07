@@ -271,9 +271,10 @@ async def get_entities_and_ids_from_variable_node(
     entities = []
     ids = []
     for variable_name in variables[variable_node.name.value]:
-        entity = variable_name.split("_id")[0]
-        entities.append(entity)
-        ids.append(variables[variable_node.name.value][variable_name])
+        if variable_name.endswith("id"):
+            entity = variable_name.split("_id")[0]
+            entities.append(entity)
+            ids.append(variables[variable_node.name.value][variable_name])
     return entities, ids
 
 
