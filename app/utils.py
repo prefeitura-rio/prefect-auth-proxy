@@ -613,9 +613,9 @@ async def modify_operations(operations: List[dict], tenant_id: str) -> Tuple[boo
                     elif action in ["delete", "set", "update"]:
                         entity = await map_entity_name(entity)
                         entity_ids = []
-                        if action.endswith("states"):
+                        if selection_name.endswith("states"):
                             entity_ids = await get_entity_ids_from_input_states(
-                                entity, selection, operation["variables"], loosen=True
+                                entity, selection, operation["variables"]
                             )
                         else:
                             entity_id = await get_entity_id(
