@@ -25,6 +25,7 @@ from loguru import logger
 from pydantic import BaseModel
 
 from app import config
+from app.models import User
 
 
 class Status(BaseModel):
@@ -156,6 +157,20 @@ async def check_if_entity_belongs_to_tenant(entity: str, id: str, tenant_id: str
         return False
     logger.debug(f"{entity} with id {id} belongs to tenant {tenant_id}.")
     return True
+
+
+async def filter_tenants(result: list, user: User):
+    """Filter the tenants based on the user's permissions.
+
+    Args:
+        result (dict): The result.
+        user (User): The user.
+    """
+    tenants = []
+    for tenant in result:
+        if await user.tenants.filter(id=tenant["id"]).count() > 0:
+            tenants.append(tenant)
+    return tenants
 
 
 async def get_entities_and_ids_from_input(
@@ -448,6 +463,27 @@ async def graphql_request(operations: dict) -> httpx.Response:
     return response
 
 
+async def is_tenant_query(operation: dict) -> bool:
+    """Check if the operation is a tenant query.
+
+    Args:
+        operation (dict): The operation.
+
+    Returns:
+        bool: Whether the operation is a tenant query.
+    """
+    if "query" not in operation:
+        return False
+    ast = parse(operation["query"])
+    for definition in ast.definitions:
+        if isinstance(definition, OperationDefinitionNode):
+            for selection in definition.selection_set.selections:
+                if isinstance(selection, FieldNode):
+                    if selection.name.value == "tenant":
+                        return True
+    return False
+
+
 async def map_entity_name(entity_name: str) -> str:
     """Map an entity name to its GraphQL type.
 
@@ -560,9 +596,18 @@ async def modify_operations(operations: List[dict], tenant_id: str) -> Tuple[boo
                             perform_operations = False
                             break
                     elif selection_name.startswith("tenant"):
-                        # It's a tenant query, no need to modify.
+                        # It's a tenant query, just make sure we have `id` in the body.
                         # We'll filter results later
-                        continue
+                        id_exists = False
+                        for selection in selection.selection_set.selections:
+                            assert isinstance(selection, FieldNode)
+                            if selection.name.value == "id":
+                                id_exists = True
+                                break
+                        if not id_exists:
+                            selections = list(selection.selection_set.selections)
+                            selections.append(FieldNode(name=NameNode(value="id")))
+                            selection.selection_set.selections = tuple(selections)
                     else:
                         # Filter by tenant_id
                         where_arg_exists = False

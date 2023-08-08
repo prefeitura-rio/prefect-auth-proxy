@@ -8,7 +8,12 @@ from loguru import logger
 from app import config
 from app.dependencies import validate_token
 from app.models import Tenant, User
-from app.utils import graphql_request, modify_operations
+from app.utils import (
+    filter_tenants,
+    graphql_request,
+    is_tenant_query,
+    modify_operations,
+)
 
 router = APIRouter(prefix="/proxy", tags=["proxy"])  # , dependencies=[Depends(validate_token)])
 
@@ -77,9 +82,7 @@ async def proxy(request: Request, user: User = Depends(validate_token)):
         operations = body
     else:
         operations = [body]
-    # logger.info(f"Operations: {operations}")
     perform_operations, operations = await modify_operations(operations, tenant_id)
-    # logger.info(f"Modified operations: {operations}")
     # If the user is not allowed to perform any of the operations, return a 403
     if not perform_operations:
         logger.error(f"Access denied for tenant ID {tenant_id}")
@@ -87,31 +90,44 @@ async def proxy(request: Request, user: User = Depends(validate_token)):
             content=json.dumps({"error": "Access denied"}),
             status_code=403,
         )
+    # Now we want to check if there's a tenant query in the body. If there is, we want to
+    # filter the results later.
+    is_tenant_query_operation = [await is_tenant_query(operation) for operation in operations]
     if isinstance(body, list):
         body = operations
     else:
         body = operations[0]
-    # if not headers.get("x-prefect-tenant-id") or headers["x-prefect-tenant-id"] == "null":
-    #     logger.warning(f"Missing tenant ID in headers.")
-    # else:
-    #     logger.success(f"Tenant ID: {headers['x-prefect-tenant-id']}")
-    # logger.info(f"Body: {body}")
-    # try:
-    #     ast = GraphQLParser().parse(body["query"])
-    #     logger.error(body["query"])
-    #     logger.success(f"GraphQL query: {ast}")
-    # except Exception:
-    #     logger.warning(f'Failed to parse body "{body}" as GraphQL query')
-    # if not headers.get("x-prefect-tenant-id"):
-    #     return Response(
-    #         content=json.dumps({"error": "Please provide tenant ID"}),
-    #         status_code=400,
-    #     )
     response = await graphql_request(body)
     if response.status_code != 200:
         logger.error(f"Prefect API returned {response.status_code}")
         logger.error(f"Body was: {body}")
-    # logger.info(f"Response: {response.content}")
+    # Filter results if necessary
+    if any(is_tenant_query_operation):
+        # Parse the response body as JSON
+        try:
+            body = response.json()
+        except json.JSONDecodeError:
+            logger.error(f"Invalid JSON: {body}")
+            return Response(
+                content="Invalid JSON",
+                status_code=400,
+            )
+        # Filter the results
+        if isinstance(body, list):
+            response_body = []
+            for i, result in enumerate(body):
+                if is_tenant_query_operation[i]:
+                    response_body.append(await filter_tenants(result, user))
+                else:
+                    response_body.append(result)
+        else:
+            response_body = await filter_tenants(body, user)
+        # Return the response
+        return Response(
+            content=json.dumps(response_body),
+            status_code=response.status_code,
+            headers=response.headers,
+        )
     return Response(
         content=response.content,
         status_code=response.status_code,
