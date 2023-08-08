@@ -113,6 +113,7 @@ async def proxy(request: Request, user: User = Depends(validate_token)):
                 status_code=400,
             )
         # Filter the results
+        logger.info(f"Filtering agents in body: {body}")
         if isinstance(body, list):
             response_body = []
             for i, result in enumerate(body):
@@ -122,6 +123,7 @@ async def proxy(request: Request, user: User = Depends(validate_token)):
                     response_body.append(result)
         else:
             response_body = await filter_tenants(body, user)
+        logger.info(f"Filtered agents in body: {response_body}")
         # Fix the Content-Length header
         content = json.dumps(response_body)
         response.headers["Content-Length"] = str(len(content))

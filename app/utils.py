@@ -166,6 +166,7 @@ async def filter_tenants(result: list, user: User):
         result (dict): The result.
         user (User): The user.
     """
+    logger.debug(f"filter_tenants result: {result}")
     tenants = []
     for tenant in result:
         this_tenants = []
