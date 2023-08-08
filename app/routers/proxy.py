@@ -63,6 +63,9 @@ async def proxy(request: Request, user: User = Depends(validate_token)):
             content=json.dumps({"error": "Invalid tenant ID"}),
             status_code=400,
         )
+    logger.info(f"User {user.username} is requesting tenant ID {tenant_id}")
+    logger.info(f"User {user.username} has access to tenants {user.tenants.all()}")
+    logger.debug(user.tenants.filter(id=tenant_id).count())
     if user.tenants.filter(id=tenant_id).count() == 0:
         logger.error(f"User {user.id} does not have access to tenant ID {tenant_id}")
         return Response(
