@@ -167,15 +167,12 @@ async def filter_tenants(result: list, user: User):
         user (User): The user.
     """
     logger.debug(f"filter_tenants result: {result}")
-    tenants = []
-    for tenant in result:
-        this_tenants = []
-        for this_tenant in tenant["data"]["tenant"]:
-            if await user.tenants.filter(id=this_tenant["id"]).count() > 0:
-                this_tenants.append(tenant)
-        tenant["data"]["tenant"] = this_tenants
-        tenants.append(tenant)
-    return tenants
+    tenants = result["data"]["tenant"]
+    filtered_tenants = []
+    for tenant in tenants:
+        if await user.tenants.filter(id=tenant["id"]).exists():
+            filtered_tenants.append(tenant)
+    result["data"]["tenant"] = filtered_tenants
 
 
 async def get_entities_and_ids_from_input(
