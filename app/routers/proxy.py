@@ -113,7 +113,7 @@ async def proxy(request: Request, user: User = Depends(validate_token)):
                 status_code=400,
             )
         # Filter the results
-        if isinstance(body, list):
+        if isinstance(body[0], list):
             response_body = []
             for i, result in enumerate(body):
                 if is_tenant_query_operation[i]:
@@ -122,9 +122,12 @@ async def proxy(request: Request, user: User = Depends(validate_token)):
                     response_body.append(result)
         else:
             response_body = await filter_tenants(body, user)
+        # Fix the Content-Length header
+        content = json.dumps(response_body)
+        response.headers["Content-Length"] = str(len(content))
         # Return the response
         return Response(
-            content=json.dumps(response_body),
+            content=content,
             status_code=response.status_code,
             headers=response.headers,
         )
