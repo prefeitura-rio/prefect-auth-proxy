@@ -293,7 +293,7 @@ async def get_entity_id(
     """
     name_entity_id = f"{entity}_id"
     # First try to extract it from the variables.
-    if name_entity_id in variables:
+    if variables and name_entity_id in variables:
         return variables[name_entity_id]
     # Else, try to extract it from the selection arguments.
     for arg in selection.arguments:
