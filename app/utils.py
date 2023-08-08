@@ -168,6 +168,7 @@ async def filter_tenants(result: list, user: User):
     """
     tenants = []
     for tenant in result:
+        tenant = json.loads(tenant)
         if await user.tenants.filter(id=tenant["id"]).count() > 0:
             tenants.append(tenant)
     return tenants
