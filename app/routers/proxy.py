@@ -113,7 +113,7 @@ async def proxy(request: Request, user: User = Depends(validate_token)):
                 status_code=400,
             )
         # Filter the results
-        if isinstance(body[0], list):
+        if isinstance(body, list):
             response_body = []
             for i, result in enumerate(body):
                 if is_tenant_query_operation[i]:
