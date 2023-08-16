@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import sentry_sdk
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
@@ -8,7 +9,16 @@ from app import config
 from app.db import TORTOISE_ORM
 from app.routers import auth, proxy, tenant, user
 
-app = FastAPI()
+if config.SENTRY_ENABLE:
+    sentry_sdk.init(
+        dsn=config.SENTRY_DSN,
+        traces_sample_rate=0,
+        environment=config.SENTRY_ENVIRONMENT,
+    )
+
+app = FastAPI(
+    title="Prefect Auth Proxy",
+)
 
 logger.info("Configuring CORS with the following settings:")
 allow_origins = config.ALLOWED_ORIGINS if config.ALLOWED_ORIGINS else ()

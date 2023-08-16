@@ -26,3 +26,8 @@ if not ALLOWED_ORIGINS and not ALLOWED_ORIGINS_REGEX:
 ALLOWED_METHODS = getenv_list_or_action("ALLOWED_METHODS", action="raise")
 ALLOWED_HEADERS = getenv_list_or_action("ALLOWED_HEADERS", action="raise")
 ALLOW_CREDENTIALS = getenv_or_action("ALLOW_CREDENTIALS", action="raise").lower() == "true"
+
+# Sentry
+SENTRY_ENABLE = True
+SENTRY_DSN = getenv_or_action("SENTRY_DSN", action="raise")
+SENTRY_ENVIRONMENT = getenv_or_action("SENTRY_ENVIRONMENT", action="raise")
