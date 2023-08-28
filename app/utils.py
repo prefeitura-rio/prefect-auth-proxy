@@ -173,6 +173,7 @@ async def filter_tenants(result: list, user: User):
         if await user.tenants.filter(id=tenant["id"]).exists():
             filtered_tenants.append(tenant)
     result["data"]["tenant"] = filtered_tenants
+    return result
 
 
 async def get_entities_and_ids_from_input(
