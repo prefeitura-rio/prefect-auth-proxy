@@ -601,9 +601,9 @@ async def modify_operations(operations: List[dict], tenant_id: str) -> Tuple[boo
                         # It's a tenant query, just make sure we have `id` in the body.
                         # We'll filter results later
                         id_exists = False
-                        for selection in selection.selection_set.selections:
-                            assert isinstance(selection, FieldNode)
-                            if selection.name.value == "id":
+                        for selection_ in selection.selection_set.selections:
+                            assert isinstance(selection_, FieldNode)
+                            if selection_.name.value == "id":
                                 id_exists = True
                                 break
                         if not id_exists:
