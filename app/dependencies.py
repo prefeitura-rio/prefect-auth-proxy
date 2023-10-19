@@ -19,3 +19,9 @@ async def validate_token(token: Annotated[str, Depends(HTTPBearer())]):
     if user.token_expiry and user.token_expiry < pendulum.now(tz=config.TIMEZONE):
         raise HTTPException(status_code=401, detail="Expired token")
     return user
+
+
+async def validate_admin(user: User = Depends(validate_token)):
+    if not user.is_admin:
+        raise HTTPException(status_code=403, detail="Forbidden")
+    return user

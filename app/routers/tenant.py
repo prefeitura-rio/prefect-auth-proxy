@@ -4,7 +4,7 @@ from loguru import logger
 from pydantic import BaseModel
 from tortoise.contrib.pydantic import pydantic_model_creator
 
-from app.dependencies import validate_token
+from app.dependencies import validate_admin
 from app.models import Tenant
 from app.utils import Status, graphql_request
 
@@ -17,7 +17,7 @@ TenantPatchPydantic = pydantic_model_creator(
     optional=list(TenantPydantic.schema()["properties"].keys()),
 )
 
-router = APIRouter(prefix="/tenant", tags=["tenant"], dependencies=[Depends(validate_token)])
+router = APIRouter(prefix="/tenant", tags=["tenant"], dependencies=[Depends(validate_admin)])
 
 
 class LoginResponse(BaseModel):

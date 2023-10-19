@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from loguru import logger
 from pydantic import BaseModel
 from tortoise.contrib.pydantic import pydantic_model_creator
 
-from app.dependencies import validate_token
+from app.dependencies import validate_admin, validate_token
 from app.models import Tenant, User
 from app.utils import Status, password_hash
 
@@ -30,12 +30,12 @@ class LoginResponse(BaseModel):
 
 
 @router.get("/")
-async def get_users() -> list[UserPydantic]:
+async def get_users(_=Depends(validate_admin)) -> list[UserPydantic]:
     return await UserPydantic.from_queryset(User.all())
 
 
 @router.post("/", status_code=201)
-async def create_user(user: UserInPydantic) -> UserPydantic:
+async def create_user(user: UserInPydantic, _=Depends(validate_admin)) -> UserPydantic:
     new_user = await User.create(
         username=user.username,
         password=await password_hash(user.password),
@@ -50,6 +50,8 @@ async def create_user(user: UserInPydantic) -> UserPydantic:
 @router.get("/{id}", responses={404: {"description": "User not found"}})
 async def get_user(id: str, user: User = Depends(validate_token)) -> UserOutPydantic:
     if id != "me":
+        if not user.is_admin and id != str(user.id):
+            raise HTTPException(status_code=403, detail="Forbidden")
         user = await User.get(id=id)
     return UserOutPydantic.from_orm(user)
 
@@ -58,6 +60,8 @@ async def get_user(id: str, user: User = Depends(validate_token)) -> UserOutPyda
 async def update_user(
     id: str, user: UserPatchPydantic, me_user: User = Depends(validate_token)
 ) -> UserOutPydantic:
+    if not me_user.is_admin and id != "me" and id != str(me_user.id):
+        raise HTTPException(status_code=403, detail="Forbidden")
     user_data = user.dict(exclude_unset=True)
     if user_data.get("password"):
         user_data["password"] = await password_hash(user_data["password"])
@@ -71,7 +75,7 @@ async def update_user(
 
 
 @router.delete("/{id}", responses={404: {"description": "User not found"}})
-async def delete_user(id: str, user: User = Depends(validate_token)) -> Status:
+async def delete_user(id: str, user: User = Depends(validate_admin)) -> Status:
     if id != "me":
         user = await User.get(id=id)
     try:
@@ -84,6 +88,8 @@ async def delete_user(id: str, user: User = Depends(validate_token)) -> Status:
 @router.get("/{id}/tenant/", responses={404: {"description": "User not found"}})
 async def get_user_tenants(id: str, user: User = Depends(validate_token)) -> list[TenantPydantic]:
     if id != "me":
+        if not user.is_admin and id != str(user.id):
+            raise HTTPException(status_code=403, detail="Forbidden")
         user = await User.get(id=id)
     return await TenantPydantic.from_queryset(user.tenants.all())
 
@@ -93,6 +99,8 @@ async def get_user_tenants(id: str, user: User = Depends(validate_token)) -> lis
 )
 async def add_user_tenant(id: str, tenant_id: str, user: User = Depends(validate_token)) -> Status:
     if id != "me":
+        if not user.is_admin and id != str(user.id):
+            raise HTTPException(status_code=403, detail="Forbidden")
         user = await User.get(id=id)
     tenant = await Tenant.get(id=tenant_id)
     await user.tenants.add(tenant)
@@ -103,7 +111,7 @@ async def add_user_tenant(id: str, tenant_id: str, user: User = Depends(validate
     "/{id}/tenant/{tenant_id}", responses={404: {"description": "User or Tenant not found"}}
 )
 async def remove_user_tenant(
-    id: str, tenant_id: str, user: User = Depends(validate_token)
+    id: str, tenant_id: str, user: User = Depends(validate_admin)
 ) -> Status:
     if id != "me":
         user = await User.get(id=id)
