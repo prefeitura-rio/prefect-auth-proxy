@@ -17,6 +17,7 @@ async def run(username: str, password: str):
         username=username,
         password=await password_hash(password),
         is_active=True,
+        is_admin=True,
         token=uuid4(),
         scopes="*",
     )

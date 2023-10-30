@@ -15,7 +15,7 @@ from app.utils import (
     modify_operations,
 )
 
-router = APIRouter(prefix="/proxy", tags=["proxy"])  # , dependencies=[Depends(validate_token)])
+router = APIRouter(prefix="/proxy", tags=["proxy"])
 
 
 @router.options("", include_in_schema=False)
