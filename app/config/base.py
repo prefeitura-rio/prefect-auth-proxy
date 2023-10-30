@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import socket
+
 from . import getenv_or_action
 
 # Password hashing configuration
@@ -20,3 +22,13 @@ if CACHE_ENABLE:
 else:
     CACHE_REDIS_URL = None
 CACHE_DEFAULT_TIMEOUT = int(getenv_or_action("CACHE_DEFAULT_TIMEOUT", default="43200"))  # 12 hours
+
+# Profiling
+PROFILING_ENABLED = getenv_or_action("PROFILING_ENABLED", default="false") in [
+    "true",
+    "True",
+    "TRUE",
+]
+
+# Host
+HOST = socket.gethostname()
