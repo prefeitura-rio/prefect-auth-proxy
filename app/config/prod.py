@@ -31,3 +31,6 @@ ALLOW_CREDENTIALS = getenv_or_action("ALLOW_CREDENTIALS", action="raise").lower(
 SENTRY_ENABLE = True
 SENTRY_DSN = getenv_or_action("SENTRY_DSN", action="raise")
 SENTRY_ENVIRONMENT = getenv_or_action("SENTRY_ENVIRONMENT", action="raise")
+
+# Profile
+PROFILING_PATH = "/profile"

@@ -8,6 +8,7 @@ from tortoise.contrib.fastapi import register_tortoise
 from app import config
 from app.db import TORTOISE_ORM
 from app.routers import auth, proxy, tenant, user
+from app.utils import register_middlewares_profile
 
 if config.SENTRY_ENABLE:
     sentry_sdk.init(
@@ -48,3 +49,6 @@ register_tortoise(
     generate_schemas=False,
     add_exception_handlers=True,
 )
+
+if config.PROFILING_ENABLED:
+    register_middlewares_profile(app)
