@@ -141,7 +141,7 @@ async def check_if_entity_belongs_to_tenant(entity: str, id: str, tenant_id: str
     cache_value = await cache.get(cache_key)
     if cache_value is not None:
         logger.debug(f"Cache hit for {entity} with id {id} and tenant {tenant_id}.")
-        return cache_value
+        return bool(cache_value)
     logger.debug(f"Cache miss for {entity} with id {id} and tenant {tenant_id}.")
     query = f"""
         query {{
@@ -155,23 +155,23 @@ async def check_if_entity_belongs_to_tenant(entity: str, id: str, tenant_id: str
     response = await graphql_request(body)
     if response.status_code != 200:
         logger.debug(f"Response status code: {response.status_code}")
-        await cache.set(cache_key, False)
+        await cache.set(cache_key, 0)
         return False
     data = response.json()
     if "errors" in data:
         logger.debug(f"Errors: {data['errors']}")
-        await cache.set(cache_key, False)
+        await cache.set(cache_key, 0)
         return False
     if not data["data"][f"{entity}_by_pk"]:
         logger.debug(f"{entity} with id {id} does not exist.")
-        await cache.set(cache_key, False)
+        await cache.set(cache_key, 0)
         return False
     if data["data"][f"{entity}_by_pk"]["tenant_id"] != tenant_id:
         logger.debug(f"{entity} with id {id} does not belong to tenant {tenant_id}.")
-        await cache.set(cache_key, False)
+        await cache.set(cache_key, 0)
         return False
     logger.debug(f"{entity} with id {id} belongs to tenant {tenant_id}.")
-    await cache.set(cache_key, True)
+    await cache.set(cache_key, 1)
     return True
 
 
