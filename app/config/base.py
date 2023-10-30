@@ -18,9 +18,15 @@ SENTRY_ENVIRONMENT = None
 # Cache
 CACHE_ENABLE = getenv_or_action("CACHE_ENABLE", default="false").lower() == "true"
 if CACHE_ENABLE:
-    CACHE_REDIS_URL = getenv_or_action("CACHE_REDIS_URL", action="raise")
+    CACHE_REDIS_HOST = getenv_or_action("CACHE_REDIS_HOST", action="raise")
+    CACHE_REDIS_PORT = int(getenv_or_action("CACHE_REDIS_PORT", action="raise"))
+    CACHE_REDIS_PASSWORD = getenv_or_action("CACHE_REDIS_PASSWORD", action="raise")
+    CACHE_REDIS_DB = int(getenv_or_action("CACHE_REDIS_DB", action="raise"))
 else:
-    CACHE_REDIS_URL = None
+    CACHE_REDIS_HOST = None
+    CACHE_REDIS_PORT = None
+    CACHE_REDIS_PASSWORD = None
+    CACHE_REDIS_DB = None
 CACHE_DEFAULT_TIMEOUT = int(getenv_or_action("CACHE_DEFAULT_TIMEOUT", default="43200"))  # 12 hours
 
 # Profiling
