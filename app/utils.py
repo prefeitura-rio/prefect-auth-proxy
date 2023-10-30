@@ -907,6 +907,6 @@ def register_middlewares_profile(app: FastAPI):
         # we dump the profiling into a file
         extension = profile_type_to_ext[profile_type]
         renderer = profile_type_to_renderer[profile_type]()
-        with open(f"{config.PROFILING_PATH}/profile.{extension}", "w") as out:
+        with open(f"{config.PROFILING_PATH}/{config.HOST}.profile.{extension}", "w") as out:
             out.write(profiler.output(renderer=renderer))
         return response

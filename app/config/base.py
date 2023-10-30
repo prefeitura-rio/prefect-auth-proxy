@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import socket
 from os import getenv
 
 # Password hashing configuration
@@ -15,3 +16,6 @@ SENTRY_ENVIRONMENT = None
 
 # Profile
 PROFILING_ENABLED = getenv("PROFILING_ENABLED", "false") in ["true", "True", "TRUE"]
+
+# Host
+HOST = socket.gethostname()
