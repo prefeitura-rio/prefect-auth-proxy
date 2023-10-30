@@ -29,6 +29,7 @@ from pyinstrument.renderers.html import HTMLRenderer
 from pyinstrument.renderers.speedscope import SpeedscopeRenderer
 
 from app import config
+from app.cache import cache
 from app.models import User
 
 
@@ -136,6 +137,12 @@ async def check_if_entity_belongs_to_tenant(entity: str, id: str, tenant_id: str
         bool: True if the entity belongs to the tenant, False otherwise.
     """
     logger.debug(f"Checking if {entity} with id {id} belongs to tenant {tenant_id}.")
+    cache_key = f"{entity}-{id}__tenant-{tenant_id}"
+    cache_value = cache.get(cache_key)
+    if cache_value is not None:
+        logger.debug(f"Cache hit for {entity} with id {id} and tenant {tenant_id}.")
+        return cache_value
+    logger.debug(f"Cache miss for {entity} with id {id} and tenant {tenant_id}.")
     query = f"""
         query {{
             {entity}_by_pk(id: "{id}") {{
@@ -148,18 +155,23 @@ async def check_if_entity_belongs_to_tenant(entity: str, id: str, tenant_id: str
     response = await graphql_request(body)
     if response.status_code != 200:
         logger.debug(f"Response status code: {response.status_code}")
+        cache.set(cache_key, False)
         return False
     data = response.json()
     if "errors" in data:
         logger.debug(f"Errors: {data['errors']}")
+        cache.set(cache_key, False)
         return False
     if not data["data"][f"{entity}_by_pk"]:
         logger.debug(f"{entity} with id {id} does not exist.")
+        cache.set(cache_key, False)
         return False
     if data["data"][f"{entity}_by_pk"]["tenant_id"] != tenant_id:
         logger.debug(f"{entity} with id {id} does not belong to tenant {tenant_id}.")
+        cache.set(cache_key, False)
         return False
     logger.debug(f"{entity} with id {id} belongs to tenant {tenant_id}.")
+    cache.set(cache_key, True)
     return True
 
 
