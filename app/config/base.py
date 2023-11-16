@@ -3,6 +3,9 @@ import socket
 
 from . import getenv_or_action
 
+# Logging
+LOG_LEVEL = getenv_or_action("LOG_LEVEL", default="INFO")
+
 # Password hashing configuration
 PASSWORD_HASH_ALGORITHM = "pbkdf2_sha256"
 PASSWORD_HASH_NUMBER_OF_ITERATIONS = 60000

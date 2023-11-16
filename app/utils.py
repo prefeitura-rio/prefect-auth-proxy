@@ -573,7 +573,7 @@ async def modify_operations(operations: List[dict], tenant_id: str) -> Tuple[boo
     for operation in operations:
         query = operation["query"] if "query" in operation else None
         variables = operation["variables"] if "variables" in operation else None
-        logger.info(f"Operation:\n- Query:\n{query}\n- Variables:\n{variables}")
+        logger.debug(f"Operation:\n- Query:\n{query}\n- Variables:\n{variables}")
         if "variables" in operation and isinstance(operation["variables"], str):
             operation["variables"] = json.loads(operation["variables"])
         ast = parse(operation["query"])
@@ -597,7 +597,7 @@ async def modify_operations(operations: List[dict], tenant_id: str) -> Tuple[boo
                             entity, task_run_id, tenant_id
                         )
                         if not belongs:
-                            logger.error(
+                            logger.warning(
                                 f"Task run {task_run_id} doesn't belong to tenant {tenant_id}"
                             )
                             perform_operations = False
@@ -620,7 +620,7 @@ async def modify_operations(operations: List[dict], tenant_id: str) -> Tuple[boo
                             )
                         if not belongs:
                             logger.debug(operation["query"])
-                            logger.error(
+                            logger.warning(
                                 f"{entity.capitalize()} {entity_id} doesn't belong to tenant "
                                 f"{tenant_id}"
                             )
@@ -682,7 +682,7 @@ async def modify_operations(operations: List[dict], tenant_id: str) -> Tuple[boo
                         or entity.startswith("message")
                         or "artifact" in entity
                     ):
-                        logger.error(f"Operations on entity {entity} is not allowed")
+                        logger.warning(f"Operations on entity {entity} is not allowed")
                         perform_operations = False
                         break
                     # If it's a delete operation, we must get the entity id
@@ -703,7 +703,7 @@ async def modify_operations(operations: List[dict], tenant_id: str) -> Tuple[boo
                                 entity, entity_id, tenant_id
                             )
                             if not belongs:
-                                logger.error(
+                                logger.warning(
                                     f"{entity.capitalize()} {entity_id} doesn't belong to tenant "
                                     f"{tenant_id}"
                                 )
@@ -722,7 +722,7 @@ async def modify_operations(operations: List[dict], tenant_id: str) -> Tuple[boo
                                 entity, entity_id, tenant_id
                             )
                             if not belongs:
-                                logger.error(
+                                logger.warning(
                                     f"{entity.capitalize()} {entity_id} doesn't belong to tenant "
                                     f"{tenant_id}"
                                 )
@@ -746,7 +746,7 @@ async def modify_operations(operations: List[dict], tenant_id: str) -> Tuple[boo
                         entities = [await map_entity_name(entity) for entity in entities]
                         if "tenant" in entities:
                             if ids[entities.index("tenant")] != tenant_id:
-                                logger.error(
+                                logger.warning(
                                     f"Tenant {ids[entities.index('tenant')]} doesn't match "
                                     f"{tenant_id}"
                                 )
@@ -759,7 +759,7 @@ async def modify_operations(operations: List[dict], tenant_id: str) -> Tuple[boo
                                     entity, entity_id, tenant_id
                                 )
                                 if not belongs:
-                                    logger.error(
+                                    logger.warning(
                                         f"{entity.capitalize()} {entity_id} doesn't belong to "
                                         f"tenant {tenant_id}"
                                     )
@@ -773,7 +773,7 @@ async def modify_operations(operations: List[dict], tenant_id: str) -> Tuple[boo
                         )
                         if "tenant" in entities:
                             if ids[entities.index("tenant")] != tenant_id:
-                                logger.error(
+                                logger.warning(
                                     f"Tenant {ids[entities.index('tenant')]} doesn't match "
                                     f"{tenant_id}"
                                 )
@@ -788,7 +788,7 @@ async def modify_operations(operations: List[dict], tenant_id: str) -> Tuple[boo
                                     entity, entity_id, tenant_id
                                 )
                                 if not belongs:
-                                    logger.error(
+                                    logger.warning(
                                         f"{entity.capitalize()} {entity_id} doesn't belong to "
                                         f"tenant {tenant_id}"
                                     )
@@ -809,20 +809,20 @@ async def modify_operations(operations: List[dict], tenant_id: str) -> Tuple[boo
                                 "flow_run", flow_run_id, tenant_id
                             )
                             if not belongs:
-                                logger.error(
+                                logger.warning(
                                     f"Flow run {flow_run_id} doesn't belong to tenant {tenant_id}"
                                 )
                                 perform_operations = False
                                 break
                     # If it's another operation, we just block it
                     else:
-                        logger.error(f"Tried to perform {action} on {entity}, not allowed")
+                        logger.warning(f"Tried to perform {action} on {entity}, not allowed")
                         perform_operations = False
                         break
 
             # If it's a subscription or anything else, block all operations
             else:
-                logger.error(f"Operation {definition.operation} is not allowed")
+                logger.warning(f"Operation {definition.operation} is not allowed")
                 perform_operations = False
                 break
         operation["query"] = print_ast(ast)
@@ -945,5 +945,4 @@ def string_to_list(string_: str) -> list:
     Returns:
         list: The list.
     """
-    logger.warning(string_, type(string_))
     return string_.split(",")

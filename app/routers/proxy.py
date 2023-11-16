@@ -67,7 +67,7 @@ async def proxy(request: Request, user: User = Depends(validate_token)):
     cache_key = f"tenant_{tenant_id}_exists"
     cache_value = await cache.get(cache_key)
     if cache_value is None:
-        logger.info(f"Cache miss for tenant ID {tenant_id} existence")
+        logger.debug(f"Cache miss for tenant ID {tenant_id} existence")
         tenant = await Tenant.get_or_none(id=tenant_id)
         if tenant:
             cache_value = 1
@@ -75,7 +75,7 @@ async def proxy(request: Request, user: User = Depends(validate_token)):
             cache_value = 0
         await cache.set(cache_key, cache_value)
     else:
-        logger.info(f"Cache hit for tenant ID {tenant_id} existence")
+        logger.debug(f"Cache hit for tenant ID {tenant_id} existence")
     if cache_value == 0:
         logger.error(f"Invalid tenant ID: {tenant_id}")
         return Response(
@@ -85,19 +85,19 @@ async def proxy(request: Request, user: User = Depends(validate_token)):
     cache_key = f"user_tenants_{user.id}"
     cache_value = await cache.get(cache_key)
     if cache_value is None:
-        logger.info(f"Cache miss for user {user.username} tenants")
+        logger.debug(f"Cache miss for user {user.username} tenants")
         tenants_list = await user.tenants.all()
         cache_value = [str(tenant.id) for tenant in tenants_list]
         await cache.set(cache_key, list_to_string(cache_value))
     else:
-        logger.info(f"Cache hit for user {user.username} tenants")
+        logger.debug(f"Cache hit for user {user.username} tenants")
         if isinstance(cache_value, bytes):
             cache_value = cache_value.decode()
         cache_value = string_to_list(cache_value)
-    logger.info(f"User {user.username} is requesting tenant ID {tenant_id}")
-    logger.info(f"User {user.username} has access to tenants {cache_value}")
+    logger.debug(f"User {user.username} is requesting tenant ID {tenant_id}")
+    logger.debug(f"User {user.username} has access to tenants {cache_value}")
     if tenant_id not in cache_value:
-        logger.error(f"User {user.username} does not have access to tenant ID {tenant_id}")
+        logger.warning(f"User {user.username} does not have access to tenant ID {tenant_id}")
         return Response(
             content=json.dumps({"error": "Access denied"}),
             status_code=403,
@@ -111,7 +111,7 @@ async def proxy(request: Request, user: User = Depends(validate_token)):
     perform_operations, operations = await modify_operations(operations, tenant_id)
     # If the user is not allowed to perform any of the operations, return a 403
     if not perform_operations:
-        logger.error(f"Access denied for tenant ID {tenant_id}")
+        logger.warning(f"Access denied for tenant ID {tenant_id}")
         return Response(
             content=json.dumps({"error": "Access denied"}),
             status_code=403,
@@ -139,7 +139,7 @@ async def proxy(request: Request, user: User = Depends(validate_token)):
                 status_code=400,
             )
         # Filter the results
-        logger.info(f"Filtering agents in body: {body}")
+        logger.debug(f"Filtering agents in body: {body}")
         if isinstance(body, list):
             response_body = []
             for i, result in enumerate(body):
@@ -149,7 +149,7 @@ async def proxy(request: Request, user: User = Depends(validate_token)):
                     response_body.append(result)
         else:
             response_body = await filter_tenants(body, user)
-        logger.info(f"Filtered agents in body: {response_body}")
+        logger.debug(f"Filtered agents in body: {response_body}")
         # Fix the Content-Length header
         content = json.dumps(response_body)
         response.headers["Content-Length"] = str(len(content))

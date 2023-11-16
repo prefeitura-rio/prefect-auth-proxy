@@ -2,6 +2,9 @@
 from . import getenv_list_or_action, getenv_or_action
 from .base import *  # noqa: F401, F403
 
+# Logging
+LOG_LEVEL = getenv_or_action("LOG_LEVEL", action="ignore", default="INFO")
+
 # Database configuration
 DATABASE_URL = getenv_or_action("DATABASE_URL", action="raise")
 
