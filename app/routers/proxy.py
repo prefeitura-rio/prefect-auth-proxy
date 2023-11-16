@@ -6,13 +6,16 @@ from fastapi import APIRouter, Depends, Request, Response
 from loguru import logger
 
 from app import config
+from app.cache import cache
 from app.dependencies import validate_token
 from app.models import Tenant, User
 from app.utils import (
     filter_tenants,
     graphql_request,
     is_tenant_query,
+    list_to_string,
     modify_operations,
+    string_to_list,
 )
 
 router = APIRouter(prefix="/proxy", tags=["proxy"])
@@ -61,16 +64,39 @@ async def proxy(request: Request, user: User = Depends(validate_token)):
         )
     tenant_id = headers["x-prefect-tenant-id"]
     # Verify API token and tenant ID permissions
-    tenant: Tenant = await Tenant.get_or_none(id=tenant_id)
-    if not tenant:
+    cache_key = f"tenant_{tenant_id}_exists"
+    cache_value = await cache.get(cache_key)
+    if cache_value is None:
+        logger.info(f"Cache miss for tenant ID {tenant_id} existence")
+        tenant = await Tenant.get_or_none(id=tenant_id)
+        if tenant:
+            cache_value = 1
+        else:
+            cache_value = 0
+        await cache.set(cache_key, cache_value)
+    else:
+        logger.info(f"Cache hit for tenant ID {tenant_id} existence")
+    if cache_value == 0:
         logger.error(f"Invalid tenant ID: {tenant_id}")
         return Response(
             content=json.dumps({"error": "Invalid tenant ID"}),
             status_code=400,
         )
+    cache_key = f"user_tenants_{user.id}"
+    cache_value = await cache.get(cache_key)
+    if cache_value is None:
+        logger.info(f"Cache miss for user {user.username} tenants")
+        tenants_list = await user.tenants.all()
+        cache_value = [str(tenant.id) for tenant in tenants_list]
+        await cache.set(cache_key, list_to_string(cache_value))
+    else:
+        logger.info(f"Cache hit for user {user.username} tenants")
+        if isinstance(cache_value, bytes):
+            cache_value = cache_value.decode()
+        cache_value = string_to_list(cache_value)
     logger.info(f"User {user.username} is requesting tenant ID {tenant_id}")
-    logger.info(f"User {user.username} has access to tenants {await user.tenants.all()}")
-    if await user.tenants.filter(id=tenant_id).count() == 0:
+    logger.info(f"User {user.username} has access to tenants {cache_value}")
+    if tenant_id not in cache_value:
         logger.error(f"User {user.username} does not have access to tenant ID {tenant_id}")
         return Response(
             content=json.dumps({"error": "Access denied"}),

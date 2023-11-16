@@ -503,6 +503,18 @@ async def is_tenant_query(operation: dict) -> bool:
     return False
 
 
+def list_to_string(list_: list) -> str:
+    """Convert a list to a string.
+
+    Args:
+        l (list): The list to convert.
+
+    Returns:
+        str: The string.
+    """
+    return ",".join(list_)
+
+
 async def map_entity_name(entity_name: str) -> str:
     """Map an entity name to its GraphQL type.
 
@@ -922,3 +934,16 @@ def register_middlewares_profile(app: FastAPI):
         with open(f"{config.PROFILING_PATH}/{config.HOST}.profile.{extension}", "w") as out:
             out.write(profiler.output(renderer=renderer))
         return response
+
+
+def string_to_list(string_: str) -> list:
+    """Convert a string to a list.
+
+    Args:
+        s (str): The string to convert.
+
+    Returns:
+        list: The list.
+    """
+    logger.warning(string_, type(string_))
+    return string_.split(",")
