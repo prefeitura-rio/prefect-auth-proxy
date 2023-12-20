@@ -459,9 +459,8 @@ async def get_flow_run_ids_from_write(selection: FieldNode, variables: dict) -> 
             elif isinstance(arg.value, VariableNode):
                 for field in variables[arg.value.name.value]:
                     if field == "logs":
-                        for log in variables[arg.value.name.value][field]:
-                            if "flow_run_id" in log:
-                                flow_run_ids.append(log["flow_run_id"])
+                        if "flow_run_id" in variables[arg.value.name.value][field]:
+                            flow_run_ids.append(log["flow_run_id"])
     return flow_run_ids
 
 
