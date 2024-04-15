@@ -475,7 +475,7 @@ async def graphql_request(operations: dict) -> httpx.Response:
     Returns:
         bytes: The response from Prefect backend.
     """
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=config.REQUESTS_DEFAULT_TIMEOUT) as client:
         response = await client.post(
             config.PREFECT_API_URL,
             json=operations,

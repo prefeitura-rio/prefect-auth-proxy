@@ -41,3 +41,6 @@ PROFILING_ENABLED = getenv_or_action("PROFILING_ENABLED", default="false") in [
 
 # Host
 HOST = socket.gethostname()
+
+# Requests timeout
+REQUESTS_DEFAULT_TIMEOUT = int(getenv_or_action("REQUESTS_DEFAULT_TIMEOUT", default="30"))

@@ -27,7 +27,7 @@ async def options():
     """
     Proxies requests to the Prefect API.
     """
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=config.REQUESTS_DEFAULT_TIMEOUT) as client:
         response = await client.options(
             config.PREFECT_API_URL,
         )
