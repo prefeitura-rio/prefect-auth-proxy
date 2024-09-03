@@ -6,6 +6,7 @@ from loguru import logger
 from pydantic import BaseModel
 from tortoise.contrib.pydantic import pydantic_model_creator
 
+from app.cache import cache
 from app.dependencies import validate_admin, validate_token
 from app.models import Tenant, User
 from app.utils import Status, password_hash
@@ -44,6 +45,7 @@ async def create_user(user: UserInPydantic, _=Depends(validate_admin)) -> UserPy
         token_expiry=user.token_expiry,
         scopes=user.scopes,
     )
+    await cache.delete(f"user_tenants_{new_user.id}")
     return UserPydantic.from_orm(new_user)
 
 
@@ -71,6 +73,8 @@ async def update_user(
     else:
         user = me_user
     await user.update_from_dict(user_data).save()
+    # Invalidate the user's tenants cache
+    await cache.delete(f"user_tenants_{user.id}")
     return UserOutPydantic.from_orm(user)
 
 
@@ -80,6 +84,7 @@ async def delete_user(id: str, user: User = Depends(validate_admin)) -> Status:
         user = await User.get(id=id)
     try:
         await user.delete()
+        await cache.delete(f"user_tenants_{user.id}")
     except Exception:
         return Status(message=f"Failed to delete user {id}", success=False)
     return Status(message=f"Deleted user {id}", success=True)
@@ -104,6 +109,7 @@ async def add_user_tenant(id: str, tenant_id: str, user: User = Depends(validate
         user = await User.get(id=id)
     tenant = await Tenant.get(id=tenant_id)
     await user.tenants.add(tenant)
+    await cache.delete(f"user_tenants_{user.id}")
     return Status(message=f"Added tenant {tenant_id} to user {id}", success=True)
 
 
@@ -117,4 +123,5 @@ async def remove_user_tenant(
         user = await User.get(id=id)
     tenant = await Tenant.get(id=tenant_id)
     await user.tenants.remove(tenant)
+    await cache.delete(f"user_tenants_{user.id}")
     return Status(message=f"Removed tenant {tenant_id} from user {id}", success=True)

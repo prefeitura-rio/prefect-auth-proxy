@@ -73,7 +73,7 @@ async def proxy(request: Request, user: User = Depends(validate_token)):
             cache_value = 1
         else:
             cache_value = 0
-        await cache.set(cache_key, cache_value)
+        await cache.set(cache_key, cache_value, expire=config.CACHE_DEFAULT_TIMEOUT)
     else:
         logger.debug(f"Cache hit for tenant ID {tenant_id} existence")
     if cache_value == 0:
@@ -88,7 +88,7 @@ async def proxy(request: Request, user: User = Depends(validate_token)):
         logger.debug(f"Cache miss for user {user.username} tenants")
         tenants_list = await user.tenants.all()
         cache_value = [str(tenant.id) for tenant in tenants_list]
-        await cache.set(cache_key, list_to_string(cache_value))
+        await cache.set(cache_key, list_to_string(cache_value), expire=config.CACHE_DEFAULT_TIMEOUT)
     else:
         logger.debug(f"Cache hit for user {user.username} tenants")
         if isinstance(cache_value, bytes):

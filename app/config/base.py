@@ -30,7 +30,7 @@ else:
     CACHE_REDIS_PORT = None
     CACHE_REDIS_PASSWORD = None
     CACHE_REDIS_DB = None
-CACHE_DEFAULT_TIMEOUT = int(getenv_or_action("CACHE_DEFAULT_TIMEOUT", default="43200"))  # 12 hours
+CACHE_DEFAULT_TIMEOUT = int(getenv_or_action("CACHE_DEFAULT_TIMEOUT", default="300"))  # 5 minutes
 
 # Profiling
 PROFILING_ENABLED = getenv_or_action("PROFILING_ENABLED", default="false") in [
