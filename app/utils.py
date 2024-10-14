@@ -658,11 +658,11 @@ async def modify_operations(operations: List[dict], tenant_id: str) -> Tuple[boo
                                         tenant_id=tenant_id,
                                     )
                                 elif isinstance(arg.value, VariableNode):
-                                    operation["variables"][
-                                        arg.value.name.value
-                                    ] = await add_id_argument_to_where_variable(
-                                        operation["variables"][arg.value.name.value],
-                                        tenant_id=tenant_id,
+                                    operation["variables"][arg.value.name.value] = (
+                                        await add_id_argument_to_where_variable(
+                                            operation["variables"][arg.value.name.value],
+                                            tenant_id=tenant_id,
+                                        )
                                     )
                                 else:
                                     print(f"arg.value is {type(arg.value)}")
